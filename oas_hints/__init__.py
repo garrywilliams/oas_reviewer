@@ -55,3 +55,8 @@ __all__ = [
     "extract_parameters_hints",
     "extract_all_hints",
 ]
+
+# Structured output pipeline
+from .validation_models import Finding, Severity as FindingSeverity, SectionValidationResult, ValidationReport
+from .prompt_builder import build_section_prompt
+from .html_renderer import render_report, render_section_block, render_findings_table
