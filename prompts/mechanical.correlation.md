@@ -10,7 +10,11 @@ INPUT CONTRACT
 Runtime input contains:
 
 HINT_PARAMETERS
-OAS_PARAMETERS
+FACTS
+
+FACTS is a JSON array of parameter fact rows.
+Each row contains:
+  name, in, schema_type, pattern, format, enum, maxLength, pointer
 
 
 
@@ -35,14 +39,18 @@ UUID regex:
 
 EVALUATION PROCEDURE
 
-Step 1  
+Step 1
 Read runtime input.
 
-Step 2  
-Locate correlationId header definitions.
+Step 2
+From FACTS, locate rows where in = "header" and name = "correlationId"
+(case-insensitive match on name).
 
-Step 3  
-Evaluate Rule R1.
+Step 3
+Evaluate Rule R1 against each located row.
+
+Step 4
+Use the pointer field from the fact row exactly as-is in each finding.
 
 
 
@@ -59,6 +67,31 @@ Return exactly one JSON object.
 No markdown.
 No explanation.
 
+If no violations exist return:
+
+{
+  "section": "parameters",
+  "summary": "No violations detected",
+  "findings": []
+}
+
+Otherwise return violations.
+
+Each finding must contain:
+
+rule_id
+section
+severity
+pointer
+message
+suggested_fix
+
 
 
 DATA
+
+HINT_PARAMETERS:
+{HINT_PARAMETERS}
+
+FACTS:
+{FACTS}

@@ -10,11 +10,16 @@ Check ONLY API structure concerns — ignore all other concerns.
 ## API Title:
 {INFO_TITLE}
 
-## Paths (extracted from OAS specification):
-{OAS_PATHS}
+## Fact Rows (operations and path/query parameters):
+{FACTS}
 
-## Operations (extracted from OAS specification):
-{OAS_OPERATIONS}
+Each row is a flat JSON object. For operation rows:
+- kind, path, method, operationId, has_request_body, tags, response_codes, pointer
+
+For parameter rows:
+- kind, name, in, path, method, pointer
+
+Use pointer exactly in your findings.
 
 ## Rules (apply exactly as written):
 
@@ -29,8 +34,7 @@ Check ONLY API structure concerns — ignore all other concerns.
      from, to, start, end, since, until, before, after,
      min, max, offset, limit, page, sort, order, fields,
      expand, include, exclude, search, q, filter
-   - DO NOT flag identifiers such as: id, uid, guid, or tokens
-     with 10 or more alphanumeric characters
+   - DO NOT flag identifiers: id, uid, guid, or tokens with 10+ alphanumeric chars
 
 3) Query parameters (in: query):
    - Flag action-switching names (whole words, case-insensitive):
@@ -48,8 +52,7 @@ UNRELATED_OPS_COMBINED
 ## Output:
 Return ONLY a single JSON object matching the response model.
 No markdown fences. No text outside the JSON.
-Report each violation ONCE only — do not repeat the same issue at different
-locations if the root cause is the same.
+Report each violation ONCE only.
 If there are no violations return findings as an empty array [].
 
 {

@@ -5,8 +5,14 @@ Check ONLY the correlationId header — ignore all other parameters.
 ## Pre-flight Checks (treat as confirmed facts):
 {HINT_PARAMETERS}
 
-## Parameters (extracted from OAS specification):
-{OAS_PARAMETERS}
+## Fact Rows (correlationId header parameters only):
+{FACTS}
+
+Each row is a flat JSON object. Fields you need:
+- name       : parameter name
+- in         : must be "header"
+- schema_type, pattern, format : the constraint fields to check
+- pointer    : use this exactly in your findings
 
 ## Rules (apply exactly as written):
 
@@ -25,8 +31,7 @@ correlationId header:
 ## Output:
 Return ONLY a single JSON object matching the response model.
 No markdown fences. No text outside the JSON.
-Report each violation ONCE only — do not repeat the same issue at different
-locations if the root cause is the same.
+Report each violation ONCE only.
 If there are no violations return findings as an empty array [].
 
 {
