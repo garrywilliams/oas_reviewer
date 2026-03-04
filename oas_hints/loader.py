@@ -4,7 +4,8 @@ OAS document loader.
 Handles:
 - YAML or JSON string input (no file required)
 - Invalid date values (e.g. 31 April) that cause yaml.safe_load to fail
-- $ref resolution via jsonref (if installed) or a simple inline resolver
+- $ref resolution via jsonref (if installed) or inline resolver
+- Returns BOTH the resolved spec (for hints) and raw spec (for normaliser)
 - Basic structural validation
 """
 import json
@@ -35,9 +36,42 @@ _NoDatesSafeLoader.yaml_implicit_resolvers = {
 # ── Public interface ─────────────────────────────────────────────────────────
 
 def load_oas_string(content: str) -> tuple[dict | None, list[str]]:
-    errors: list[str] = []
-    raw_dict: dict | None = None
+    """
+    Parse an OAS 3.x document from a YAML or JSON string.
+    Returns the RESOLVED spec (all $refs expanded) for use with hint extractors.
+    Use load_oas_string_raw() to get the unresolved spec for the normaliser.
+    """
+    raw_dict, errors = _parse(content)
+    if raw_dict is None:
+        return None, errors
 
+    resolved = _resolve(raw_dict, errors)
+    return resolved, errors
+
+
+def load_oas_string_both(content: str) -> tuple[dict | None, dict | None, list[str]]:
+    """
+    Parse an OAS 3.x document and return BOTH versions.
+
+    Returns:
+        (resolved_spec, raw_spec, errors)
+
+        resolved_spec — all $refs expanded, used by hint extractors
+        raw_spec      — original structure with $refs intact, used by normaliser
+    """
+    raw_dict, errors = _parse(content)
+    if raw_dict is None:
+        return None, None, errors
+
+    resolved = _resolve(raw_dict, errors)
+    return resolved, raw_dict, errors
+
+
+# ── Internal helpers ─────────────────────────────────────────────────────────
+
+def _parse(content: str) -> tuple[dict | None, list[str]]:
+    """Parse YAML or JSON string to a plain dict."""
+    errors: list[str] = []
     stripped = content.strip()
 
     if stripped.startswith("{"):
@@ -63,17 +97,20 @@ def load_oas_string(content: str) -> tuple[dict | None, list[str]]:
     elif not str(oas_version).startswith("3."):
         errors.append(f"'openapi' version is '{oas_version}' — only OAS 3.x is supported")
 
+    return raw_dict, errors
+
+
+def _resolve(raw_dict: dict, errors: list[str]) -> dict:
+    """Resolve all $refs in a parsed dict."""
     try:
         if _HAS_JSONREF:
             resolved = _jsonref.replace_refs(raw_dict)
-            resolved_dict = _deep_dict(resolved)
+            return _deep_dict(resolved)
         else:
-            resolved_dict = _resolve_refs_inline(raw_dict, raw_dict)
+            return _resolve_refs_inline(raw_dict, raw_dict)
     except Exception as e:
         errors.append(f"$ref resolution failure: {e}")
-        return raw_dict, errors
-
-    return resolved_dict, errors
+        return raw_dict
 
 
 def _deep_dict(obj):
@@ -84,8 +121,8 @@ def _deep_dict(obj):
     return obj
 
 
-def _resolve_refs_inline(obj, root: dict, _depth: int = 0) -> dict:
-    """Simple internal $ref resolver — handles self-contained specs only."""
+def _resolve_refs_inline(obj, root: dict, _depth: int = 0):
+    """Simple internal $ref resolver for self-contained specs."""
     if _depth > 20:
         return obj
     if isinstance(obj, dict):
